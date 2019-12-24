@@ -4,9 +4,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from django.views.generic import ListView
 
-from .forms import EmailPostForm
-
-from .models import Post
+from .forms import EmailPostForm, CommentForm
+from .models import Post, Comment
 # Create your views here.
 
 def post_share(request,post_id):
@@ -50,4 +49,15 @@ def post_list(request):
 
 def post_detail(request, year, month, day, post):
     post = get_object_or_404(Post, slug=post, status = 'published', publish__year = year, publish__month = month, publish__day = day)
-    return render(request,'blog/post/detail.html',{'post': post})
+    comments = post.comments.filter(active = True)
+    new_comment = None
+    comment_form = None
+    if request.method == 'POST':
+        comment_form = CommentForm(data = request.POST)
+        if comment_form.is_valid():
+            new_comment = comment_form.save(commit = False)
+            new_comment.post = post
+            new_comment.save()
+        else:
+            comment_form = CommentForm()
+    return render(request,'blog/post/detail.html',{'post': post,'new_comment':new_comment, 'comment_form':comment_form, 'comments':comments})
