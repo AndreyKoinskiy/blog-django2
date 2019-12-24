@@ -6,6 +6,8 @@ from django.views.generic import ListView
 
 from .forms import EmailPostForm, CommentForm
 from .models import Post, Comment
+
+from taggit.models import Tag
 # Create your views here.
 
 def post_share(request,post_id):
@@ -31,8 +33,13 @@ class PostListView(ListView):
     paginate_by = 3
     template_name = 'blog/post/list.html'
 
-def post_list(request):
+def post_list(request,tag_slug = None):
     object_list = Post.published.all()
+
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug = tag_slug)
+        object_list = object_list.filter(tags__in = [tag])
     paginator = Paginator(object_list,3)# 3 articles per page
     page = request.GET.get('page') if request.GET.get('page') else 1
     posts = {}
@@ -45,7 +52,7 @@ def post_list(request):
         posts = paginator.page(paginator.num_pages)
     print (page)
     print (posts)
-    return render(request, 'blog/post/list.html', {'page':page,'posts':posts})
+    return render(request, 'blog/post/list.html', {'page':page,'posts':posts,'tag': tag})
 
 def post_detail(request, year, month, day, post):
     post = get_object_or_404(Post, slug=post, status = 'published', publish__year = year, publish__month = month, publish__day = day)
