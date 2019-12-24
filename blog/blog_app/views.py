@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
+from django.db.models import Count
 from django.views.generic import ListView
 
 from .forms import EmailPostForm, CommentForm
@@ -50,8 +50,6 @@ def post_list(request,tag_slug = None):
         post = paginator.page(1)
     except EmptyPage:
         posts = paginator.page(paginator.num_pages)
-    print (page)
-    print (posts)
     return render(request, 'blog/post/list.html', {'page':page,'posts':posts,'tag': tag})
 
 def post_detail(request, year, month, day, post):
@@ -67,4 +65,8 @@ def post_detail(request, year, month, day, post):
             new_comment.save()
         else:
             comment_form = CommentForm()
-    return render(request,'blog/post/detail.html',{'post': post,'new_comment':new_comment, 'comment_form':comment_form, 'comments':comments})
+    post_tag_ids = post.tags.values_list('id',flat =True)
+    similar_posts = Post.published.filter(tags__in = post_tag_ids,).exclude(id = post.id)
+    similar_posts = similar_posts.annotate(same_tags = Count('tags')).order_by('-same_tags','publish')[:4]
+    print(similar_posts)
+    return render(request,'blog/post/detail.html',{'post': post,'new_comment':new_comment, 'comment_form':comment_form, 'comments':comments,'similar_posts': similar_posts})

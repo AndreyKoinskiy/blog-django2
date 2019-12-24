@@ -18,7 +18,12 @@
 {% empty %}
 <p>There are no comments yet.</p>
 {% endfor %}
-
+<h2>Similar post</h2>
+<ul>
+    {% for post in similar_posts %}
+    <li><a href="{{ post.get_absolute_url }}">{{post.title}}</a></li>
+    {% endfor %}
+</ul>
 {% if new_comment %}
 <h2>Your comment has been added.</h2>
 {% else %}
